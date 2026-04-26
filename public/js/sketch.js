@@ -14,7 +14,9 @@ let motionField = {
   vy: 0,
   shake: 0,
   noiseX: 0,
-  noiseY: 0
+  noiseY: 0,
+  targetX: 0,
+  targetY: 0
 }
 
 const PA_SIZE_SCALE = 0.8
@@ -139,29 +141,33 @@ function updateFrameBox() {
 }
 
 function updateMotionField() {
-  const targetVX = constrain(motionData.x, -10, 10) * 0.42
-  const targetVY = constrain(motionData.y, -10, 10) * 0.42
-  const targetShake = constrain(motionData.shake, 0, 8)
+  const mx = constrain(motionData.x || 0, -10, 10)
+  const my = constrain(motionData.y || 0, -10, 10)
+  const ms = constrain(motionData.shake || 0, 0, 8)
 
-  motionField.vx = lerp(motionField.vx, targetVX, 0.08)
-  motionField.vy = lerp(motionField.vy, targetVY, 0.08)
+  motionField.targetX = mx * 14
+  motionField.targetY = my * 14
+
+  const spring = 0.07
+  const damping = 0.88
+
+  motionField.vx += (motionField.targetX - motionField.x) * spring
+  motionField.vy += (motionField.targetY - motionField.y) * spring
+
+  motionField.vx *= damping
+  motionField.vy *= damping
 
   motionField.x += motionField.vx
   motionField.y += motionField.vy
 
-  motionField.x *= 0.92
-  motionField.y *= 0.92
-  motionField.vx *= 0.94
-  motionField.vy *= 0.94
+  motionField.x = constrain(motionField.x, -150, 150)
+  motionField.y = constrain(motionField.y, -150, 150)
 
-  motionField.x = constrain(motionField.x, -90, 90)
-  motionField.y = constrain(motionField.y, -90, 90)
+  motionField.shake = lerp(motionField.shake, ms, 0.14)
 
-  motionField.shake = lerp(motionField.shake, targetShake, 0.12)
-
-  const t = frameCount * 0.018
-  motionField.noiseX = (noise(t, 10) - 0.5) * motionField.shake * 3.8
-  motionField.noiseY = (noise(20, t) - 0.5) * motionField.shake * 3.8
+  const t = frameCount * 0.025
+  motionField.noiseX = (noise(t, 9.7) - 0.5) * motionField.shake * 7
+  motionField.noiseY = (noise(8.4, t) - 0.5) * motionField.shake * 7
 }
 
 function drawAmbientBackground() {
@@ -220,7 +226,7 @@ function drawCompositionView() {
   drawWordBackgroundPanel(fx, fy, fw, fh, stats, sourceForms, finishing ? 1 : 0.98, true)
   drawWordFrame(fx, fy, fw, fh, true, frameExpand)
   drawWordComposition(sourceForms, fx, fy, fw, fh, true, finishing ? 1.16 : 1.04, frameExpand, 1)
-  
+
   if (finishing) {
     drawFinishPulse(fx, fy, fw, fh, finishState.progress, stats)
   }
@@ -825,10 +831,10 @@ function drawWordComposition(forms, x, y, w, h, active, intensity, finishAmp, mo
   const cx = x + w * 0.5
   const cy = y + h * 0.5
 
-  const offsetX = active ? (motionField.x + motionField.noiseX) * motionScale : 0
-  const offsetY = active ? (motionField.y + motionField.noiseY) * motionScale : 0
+  const fieldX = (motionField.x + motionField.noiseX) * motionScale
+  const fieldY = (motionField.y + motionField.noiseY) * motionScale
 
-  translate(offsetX, offsetY)
+  translate(fieldX, fieldY)
 
   for (let i = 0; i < forms.length; i++) {
     drawLetterForm(forms[i], cx, cy, w, h, active, intensity, finishAmp)
@@ -1924,6 +1930,15 @@ function drawInterface() {
   textAlign(RIGHT, BOTTOM)
   fill(78, 80, 82, 190)
   text("PHONETIC ARCHIVE / P5.JS / SOCKET.IO", width - 32, height - 12)
+
+  textAlign(RIGHT, TOP)
+  fill(50, 52, 54, 220)
+  textSize(10)
+  text(`MOTION X ${nf(motionData.x || 0, 1, 2)}`, width - 32, 92)
+  text(`MOTION Y ${nf(motionData.y || 0, 1, 2)}`, width - 32, 108)
+  text(`FIELD X ${nf(motionField.x || 0, 1, 2)}`, width - 32, 124)
+  text(`FIELD Y ${nf(motionField.y || 0, 1, 2)}`, width - 32, 140)
+  text(`SHAKE ${nf(motionData.shake || 0, 1, 2)}`, width - 32, 156)
 
   pop()
 }
