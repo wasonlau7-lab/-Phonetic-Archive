@@ -7,6 +7,15 @@ let motionData = { x: 0, y: 0, z: 0, shake: 0 }
 let frameBox = { x: 0, y: 0, w: 0, h: 0 }
 let finishState = null
 let selectedArchiveIndex = -1
+let motionField = {
+  x: 0,
+  y: 0,
+  vx: 0,
+  vy: 0,
+  shake: 0,
+  noiseX: 0,
+  noiseY: 0
+}
 
 const PA_SIZE_SCALE = 0.8
 
@@ -107,6 +116,7 @@ function setup() {
 function draw() {
   background(250, 250, 248)
   updateFrameBox()
+  updateMotionField()
   drawAmbientBackground()
 
   if (currentMode === "archive") {
@@ -126,6 +136,32 @@ function updateFrameBox() {
   frameBox.h = height * 0.58
   frameBox.x = width * 0.5 - frameBox.w * 0.5
   frameBox.y = height * 0.5 - frameBox.h * 0.5 + 20
+}
+
+function updateMotionField() {
+  const targetVX = constrain(motionData.x, -10, 10) * 0.42
+  const targetVY = constrain(motionData.y, -10, 10) * 0.42
+  const targetShake = constrain(motionData.shake, 0, 8)
+
+  motionField.vx = lerp(motionField.vx, targetVX, 0.08)
+  motionField.vy = lerp(motionField.vy, targetVY, 0.08)
+
+  motionField.x += motionField.vx
+  motionField.y += motionField.vy
+
+  motionField.x *= 0.92
+  motionField.y *= 0.92
+  motionField.vx *= 0.94
+  motionField.vy *= 0.94
+
+  motionField.x = constrain(motionField.x, -90, 90)
+  motionField.y = constrain(motionField.y, -90, 90)
+
+  motionField.shake = lerp(motionField.shake, targetShake, 0.12)
+
+  const t = frameCount * 0.018
+  motionField.noiseX = (noise(t, 10) - 0.5) * motionField.shake * 3.8
+  motionField.noiseY = (noise(20, t) - 0.5) * motionField.shake * 3.8
 }
 
 function drawAmbientBackground() {
@@ -183,8 +219,8 @@ function drawCompositionView() {
   drawPanelShadow(fx, fy, fw, fh, "large")
   drawWordBackgroundPanel(fx, fy, fw, fh, stats, sourceForms, finishing ? 1 : 0.98, true)
   drawWordFrame(fx, fy, fw, fh, true, frameExpand)
-  drawWordComposition(sourceForms, fx, fy, fw, fh, true, finishing ? 1.16 : 1.04, frameExpand)
-
+  drawWordComposition(sourceForms, fx, fy, fw, fh, true, finishing ? 1.16 : 1.04, frameExpand, 1)
+  
   if (finishing) {
     drawFinishPulse(fx, fy, fw, fh, finishState.progress, stats)
   }
@@ -356,7 +392,7 @@ function drawArchiveCard(item, x, y, w, h, index) {
   line(x + w * 0.5, y, x + w * 0.5, y + h)
   line(x, y + h * 0.5, x + w, y + h * 0.5)
 
-  drawWordComposition(item.forms, x, y, w, h, false, over ? 1.02 : 0.82, 0)
+  drawWordComposition(item.forms, x, y, w, h, true, over ? 1.02 : 0.82, 0, over ? 0.42 : 0.28)
   drawArchiveCardMeta(item, x, y, w, h, index, over, stats)
 
   pop()
@@ -450,7 +486,7 @@ function drawArchiveDetailView() {
   drawPanelShadow(x, y, w, h, "large")
   drawWordBackgroundPanel(x, y, w, h, stats, item.forms, 1, false)
   drawWordFrame(x, y, w, h, true, 0.28)
-  drawWordComposition(item.forms, x, y, w, h, false, 1.08, 0)
+  drawWordComposition(item.forms, x, y, w, h, true, 1.08, 0, 0.75)
   drawArchiveDetailMeta(item, stats, x, y + h + 30, w)
 
   pop()
@@ -778,7 +814,7 @@ function drawFrostedGrain(x, y, w, h, emphasis) {
   pop()
 }
 
-function drawWordComposition(forms, x, y, w, h, active, intensity, finishAmp) {
+function drawWordComposition(forms, x, y, w, h, active, intensity, finishAmp, motionScale = 1) {
   push()
 
   drawingContext.save()
@@ -788,11 +824,11 @@ function drawWordComposition(forms, x, y, w, h, active, intensity, finishAmp) {
 
   const cx = x + w * 0.5
   const cy = y + h * 0.5
-  const shake = active ? constrain(motionData.shake, 0, 8) : 0
-  const offsetX = active ? map(motionData.x, -10, 10, -22, 22, true) : 0
-  const offsetY = active ? map(motionData.y, -10, 10, -22, 22, true) : 0
 
-  translate(offsetX + random(-shake, shake), offsetY + random(-shake, shake))
+  const offsetX = active ? (motionField.x + motionField.noiseX) * motionScale : 0
+  const offsetY = active ? (motionField.y + motionField.noiseY) * motionScale : 0
+
+  translate(offsetX, offsetY)
 
   for (let i = 0; i < forms.length; i++) {
     drawLetterForm(forms[i], cx, cy, w, h, active, intensity, finishAmp)
