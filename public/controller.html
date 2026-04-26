@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phonetic Controller</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="controller-body">
+  <section class="controller-panel">
+    <div class="controller-title">PHONETIC CONTROLLER</div>
+    <button id="motion-button">ENABLE MOTION</button>
+    <div id="controller-status">waiting</div>
+    <div class="controller-data">
+      <span id="tilt-x">x: 0.00</span>
+      <span id="tilt-y">y: 0.00</span>
+      <span id="shake">shake: 0.00</span>
+    </div>
+  </section>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/controller.js"></script>
+</body>
+</html>
