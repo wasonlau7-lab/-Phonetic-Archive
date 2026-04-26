@@ -10,6 +10,8 @@ const io = new Server(server)
 const PORT = process.env.PORT || 3000
 const publicPath = path.join(__dirname, "../public")
 
+let controllerConnected = false
+
 app.use(express.static(publicPath))
 
 app.get("/", (req, res) => {
@@ -21,26 +23,37 @@ app.get("/controller", (req, res) => {
 })
 
 io.on("connection", socket => {
+  socket.emit("controller-status", {
+    connected: controllerConnected
+  })
+
   socket.on("controller-motion", data => {
-    socket.broadcast.emit("motion-data", data)
+    controllerConnected = true
+
+    io.emit("controller-status", {
+      connected: true
+    })
+
+    io.emit("motion-data", data)
   })
 
   socket.on("controller-ready", data => {
-    socket.broadcast.emit("controller-status", data)
-  })
+    controllerConnected = !!data.connected
 
-  socket.on("main-ready", data => {
-    socket.broadcast.emit("main-status", data)
-  })
-
-  socket.on("disconnect", () => {
-    socket.broadcast.emit("controller-status", {
-      connected: false
+    io.emit("controller-status", {
+      connected: controllerConnected
     })
   })
+
+  socket.on("main-ready", () => {
+    socket.emit("controller-status", {
+      connected: controllerConnected
+    })
+  })
+
+  socket.on("disconnect", () => {})
 })
 
 server.listen(PORT, () => {
-  console.log(`Phonetic Archive running at http://localhost:${PORT}`)
-  console.log(`Controller running at http://localhost:${PORT}/controller`)
+  console.log(`Phonetic Archive running on port ${PORT}`)
 })

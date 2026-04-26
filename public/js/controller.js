@@ -92,6 +92,12 @@ function enableSensors() {
     connected: true
   })
 
+  setInterval(() => {
+    socket.emit("controller-ready", {
+      connected: true
+    })
+  }, 1000)
+
   setInterval(sendMotionData, 33)
 }
 
