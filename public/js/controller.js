@@ -6,6 +6,12 @@ const tiltXEl = document.getElementById("tilt-x")
 const tiltYEl = document.getElementById("tilt-y")
 const shakeEl = document.getElementById("shake")
 
+const motionDot = document.getElementById("motion-dot")
+const blobA = document.getElementById("blob-a")
+const blobB = document.getElementById("blob-b")
+const blobC = document.getElementById("blob-c")
+const blobD = document.getElementById("blob-d")
+
 let sensorEnabled = false
 let hasOrientation = false
 let hasMotion = false
@@ -87,6 +93,7 @@ function enableSensors() {
   window.addEventListener("devicemotion", handleMotion, true)
 
   statusEl.textContent = "sensors enabled, move phone"
+  button.textContent = "Motion Enabled"
 
   socket.emit("controller-ready", {
     connected: true
@@ -182,7 +189,40 @@ function sendMotionData() {
   tiltYEl.textContent = `y: ${data.y.toFixed(2)}`
   shakeEl.textContent = `shake: ${data.shake.toFixed(2)}`
 
+  updateControllerVisual(data)
+
   socket.emit("controller-motion", data)
+}
+
+function updateControllerVisual(data) {
+  const x = constrainValue(data.x, -10, 10)
+  const y = constrainValue(data.y, -10, 10)
+  const shake = constrainValue(data.shake, 0, 8)
+
+  const dotX = x * 8
+  const dotY = y * 8
+
+  if (motionDot) {
+    motionDot.style.transform = `translate(calc(-50% + ${dotX}px), calc(-50% + ${dotY}px))`
+  }
+
+  const shakePulse = 1 + shake * 0.012
+
+  if (blobA) {
+    blobA.style.transform = `translate(${x * 6}px, ${y * 4}px) scale(${shakePulse})`
+  }
+
+  if (blobB) {
+    blobB.style.transform = `translate(${-x * 5}px, ${y * 5}px) scale(${1 + shake * 0.01})`
+  }
+
+  if (blobC) {
+    blobC.style.transform = `translate(${x * 4}px, ${-y * 5}px) scale(${1 + shake * 0.009})`
+  }
+
+  if (blobD) {
+    blobD.style.transform = `translate(${-x * 4}px, ${-y * 4}px) scale(${1 + shake * 0.008})`
+  }
 }
 
 function numberOrZero(value) {

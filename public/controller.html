@@ -2,23 +2,328 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Phonetic Controller</title>
-  <link rel="stylesheet" href="/css/style.css" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      background: rgb(252, 252, 249);
+      font-family: Arial, Helvetica, sans-serif;
+      color: rgb(28, 29, 31);
+      overflow-x: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .controller-page {
+      width: 100%;
+      min-height: 100vh;
+      padding: 18px 18px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      background:
+        linear-gradient(rgba(0, 0, 0, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.035) 1px, transparent 1px),
+        rgb(252, 252, 249);
+      background-size: 36px 36px;
+    }
+
+    .top-title {
+      width: 100%;
+      padding-top: 4px;
+      text-align: center;
+    }
+
+    .top-title h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgb(28, 29, 31);
+    }
+
+    .top-title p {
+      margin: 10px 0 0;
+      font-size: 12px;
+      line-height: 1.45;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgb(68, 70, 72);
+    }
+
+    .motion-window-wrap {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .motion-window {
+      position: relative;
+      width: 100%;
+      height: 48vh;
+      min-height: 360px;
+      max-height: 520px;
+      background: rgb(255, 255, 255);
+      border: 1px solid rgba(30, 32, 34, 0.36);
+      box-shadow: 5px 5px 28px rgba(120, 124, 128, 0.5);
+      overflow: hidden;
+    }
+
+    .motion-window::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(rgba(0, 0, 0, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.045) 1px, transparent 1px);
+      background-size: 42px 42px;
+      opacity: 0.55;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .motion-window::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .blob {
+      position: absolute;
+      width: 230px;
+      height: 230px;
+      border-radius: 999px;
+      filter: blur(26px);
+      opacity: 0.88;
+      transition: transform 0.22s ease-out;
+      mix-blend-mode: multiply;
+    }
+
+    .blob-a {
+      left: -70px;
+      top: 24px;
+      background: radial-gradient(circle, rgba(255, 68, 145, 0.95), rgba(255, 68, 145, 0.12) 68%, transparent 100%);
+    }
+
+    .blob-b {
+      right: -82px;
+      top: 68px;
+      background: radial-gradient(circle, rgba(56, 140, 255, 0.95), rgba(56, 140, 255, 0.14) 68%, transparent 100%);
+    }
+
+    .blob-c {
+      left: 18%;
+      bottom: -82px;
+      background: radial-gradient(circle, rgba(255, 196, 0, 0.95), rgba(255, 196, 0, 0.12) 68%, transparent 100%);
+    }
+
+    .blob-d {
+      right: 10%;
+      bottom: 12px;
+      background: radial-gradient(circle, rgba(0, 224, 180, 0.85), rgba(0, 224, 180, 0.12) 68%, transparent 100%);
+    }
+
+    .motion-cross {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 72%;
+      height: 72%;
+      transform: translate(-50%, -50%);
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .motion-cross::before,
+    .motion-cross::after {
+      content: "";
+      position: absolute;
+      background: rgba(30, 32, 34, 0.16);
+    }
+
+    .motion-cross::before {
+      left: 50%;
+      top: 0;
+      width: 1px;
+      height: 100%;
+    }
+
+    .motion-cross::after {
+      left: 0;
+      top: 50%;
+      width: 100%;
+      height: 1px;
+    }
+
+    .motion-dot {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      background: rgb(28, 29, 31);
+      box-shadow: 0 0 0 10px rgba(28, 29, 31, 0.08);
+      z-index: 6;
+      transition: transform 0.08s linear;
+    }
+
+    .window-label {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 18px;
+      z-index: 7;
+      text-align: center;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(32, 34, 36, 0.72);
+    }
+
+    .controls {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    button {
+      width: 100%;
+      min-height: 58px;
+      border: 1px solid rgba(30, 32, 34, 0.5);
+      border-radius: 0;
+      background: rgb(255, 255, 255);
+      color: rgb(28, 29, 31);
+      font-size: 15px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      box-shadow: 4px 4px 20px rgba(120, 124, 128, 0.32);
+    }
+
+    button:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 12px rgba(120, 124, 128, 0.28);
+    }
+
+    .status {
+      width: 100%;
+      padding: 18px 14px;
+      background: rgb(255, 255, 255);
+      border: 1px solid rgba(30, 32, 34, 0.22);
+      box-shadow: 4px 4px 20px rgba(120, 124, 128, 0.22);
+      text-align: center;
+    }
+
+    .status-main {
+      margin: 0 0 14px;
+      font-size: 14px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgb(34, 36, 38);
+    }
+
+    .data-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .data-line {
+      font-size: 16px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgb(48, 50, 52);
+    }
+
+    .hint {
+      margin: 0;
+      max-width: 310px;
+      font-size: 12px;
+      line-height: 1.55;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(60, 62, 64, 0.78);
+    }
+
+    .footer {
+      margin-top: auto;
+      padding-top: 8px;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(70, 72, 74, 0.75);
+    }
+  </style>
 </head>
-<body class="controller-body">
-  <section class="controller-panel">
-    <div class="controller-title">PHONETIC CONTROLLER</div>
-    <button id="motion-button">ENABLE MOTION</button>
-    <div id="controller-status">waiting</div>
-    <div class="controller-data">
-      <span id="tilt-x">x: 0.00</span>
-      <span id="tilt-y">y: 0.00</span>
-      <span id="shake">shake: 0.00</span>
-    </div>
-  </section>
+
+<body>
+  <main class="controller-page">
+    <section class="top-title">
+      <h1>PHONETIC CONTROLLER</h1>
+      <p>Motion interface / body tilt / archive field</p>
+    </section>
+
+    <section class="motion-window-wrap">
+      <div class="motion-window">
+        <div class="blob blob-a" id="blob-a"></div>
+        <div class="blob blob-b" id="blob-b"></div>
+        <div class="blob blob-c" id="blob-c"></div>
+        <div class="blob blob-d" id="blob-d"></div>
+
+        <div class="motion-cross"></div>
+        <div class="motion-dot" id="motion-dot"></div>
+        <div class="window-label">Tilt field</div>
+      </div>
+    </section>
+
+    <section class="controls">
+      <button id="motion-button">Enable Motion</button>
+
+      <div class="status">
+        <p class="status-main" id="controller-status">controller waiting</p>
+
+        <div class="data-grid">
+          <div class="data-line" id="tilt-x">x: 0.00</div>
+          <div class="data-line" id="tilt-y">y: 0.00</div>
+          <div class="data-line" id="shake">shake: 0.00</div>
+        </div>
+      </div>
+
+      <p class="hint">
+        Hold the phone as a physical controller. Tilt direction becomes motion pressure inside the archive image.
+      </p>
+    </section>
+
+    <div class="footer">PHONETIC ARCHIVE / SOCKET.IO / DEVICE MOTION</div>
+  </main>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/js/controller.js"></script>
+  <script src="js/controller.js"></script>
 </body>
 </html>
